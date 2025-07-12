@@ -1,138 +1,146 @@
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
-local hrp = char:WaitForChild("HumanoidRootPart")
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local camera = workspace.CurrentCamera
 
--- Clonar bola interativa para o mundo
-local bola = ReplicatedStorage:WaitForChild("BolaInterativa"):Clone()
-bola.Parent = workspace
-bola.Anchored = false
-bola.CanCollide = true
-bola.Position = hrp.Position + Vector3.new(0, 5, 0)
+-- GUIs
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "MenuBallGui"
+screenGui.ResetOnSpawn = false
 
--- Clonar o menu GUI
-local menuGui = ReplicatedStorage:WaitForChild("MenuGui"):Clone()
-menuGui.Enabled = false
-menuGui.Name = "ZillaMenu"
-menuGui.Parent = player:WaitForChild("PlayerGui")
+-- Bola (botão redondo)
+local ball = Instance.new("ImageButton")
+ball.Name = "MagicBall"
+ball.Size = UDim2.new(0, 80, 0, 80)
+ball.Position = UDim2.new(0.1, 0, 0.1, 0)
+ball.BackgroundTransparency = 1
+ball.Image = "rbxassetid://3570695787"
+ball.ImageColor3 = Color3.fromRGB(170, 0, 255)
+ball.ScaleType = Enum.ScaleType.Stretch
+ball.Parent = screenGui
+ball.Active = true
+ball.Draggable = true
 
--- Estilizar interface
-local function estilizarBotao(botao)
-	botao.Font = Enum.Font.FredokaOne
-	botao.TextColor3 = Color3.new(1, 1, 1)
-	botao.BackgroundColor3 = Color3.fromRGB(128, 0, 255) -- Roxo
-	botao.BorderSizePixel = 0
-	botao.TextStrokeTransparency = 0.5
-	botao.TextScaled = true
-	botao.TextWrapped = true
+-- Menu
+local menu = Instance.new("Frame")
+menu.Size = UDim2.new(0, 200, 0, 250)
+menu.Position = UDim2.new(0, 100, 0, 100)
+menu.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+menu.Visible = false
+menu.Active = true
+menu.Draggable = true
+menu.Parent = screenGui
+
+-- Fonte
+local function createButton(text)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, -10, 0, 35)
+	btn.Position = UDim2.new(0, 5, 0, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(100, 0, 180)
+	btn.Text = text
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.FredokaOne
+	btn.TextScaled = true
+	btn.AutoButtonColor = true
+	btn.Parent = menu
+	return btn
 end
 
--- Estilizar fundo
-if menuGui:FindFirstChild("Frame") then
-	local frame = menuGui:FindFirstChild("Frame")
-	frame.BackgroundColor3 = Color3.fromRGB(40, 0, 80) -- Roxo escuro
-	frame.BorderSizePixel = 0
-	local titulo = Instance.new("TextLabel")
-	titulo.Size = UDim2.new(1, 0, 0, 40)
-	titulo.Position = UDim2.new(0, 0, 0, 0)
-	titulo.BackgroundTransparency = 1
-	titulo.Text = "ZILLA MENU"
-	titulo.Font = Enum.Font.FredokaOne
-	titulo.TextColor3 = Color3.fromRGB(200, 100, 255) -- Roxo vibrante
-	titulo.TextScaled = true
-	titulo.Parent = frame
+-- Funções
+local isUp = false
+local teleportPos = nil
+local espOn = false
+
+-- Botões
+local upButton = createButton("Subir 196.2 (15s)")
+local speedButton = createButton("Velocidade 60")
+local jumpButton = createButton("Pulo Alto")
+local espButton = createButton("ESP")
+local teleportButton = createButton("Teleportar")
+
+-- Reposicionar botões
+local function updateButtonPositions()
+	for i, btn in ipairs(menu:GetChildren()) do
+		if btn:IsA("TextButton") then
+			btn.Position = UDim2.new(0, 5, 0, (i - 1) * 40)
+		end
+	end
 end
+updateButtonPositions()
 
--- Config para teleporte
-local teleportPoint = nil
-
--- Criar detector de clique na bola
-local clickDetector = Instance.new("ClickDetector", bola)
-clickDetector.MaxActivationDistance = 20
-
-clickDetector.MouseClick:Connect(function()
-	menuGui.Enabled = not menuGui.Enabled
+-- Subida
+upButton.MouseButton1Click:Connect(function()
+	if isUp then return end
+	isUp = true
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if root then
+		local originalPos = root.Position
+		root.Anchored = true
+		root.CFrame = CFrame.new(root.Position.X, 196.2, root.Position.Z)
+		task.wait(15)
+		root.Anchored = false
+	end
+	isUp = false
 end)
 
--- Botões do menu (nomeie os botoes corretamente no MenuGui)
-local alturaBtn = menuGui:WaitForChild("AlturaBtn")
-local velocidadeBtn = menuGui:WaitForChild("VelocidadeBtn")
-local puloBtn = menuGui:WaitForChild("PuloBtn")
-local espBtn = menuGui:WaitForChild("EspBtn")
-local teleportBtn = menuGui:WaitForChild("TeleportBtn")
-
--- Estilizar os botões
-for _, botao in pairs({alturaBtn, velocidadeBtn, puloBtn, espBtn, teleportBtn}) do
-	estilizarBotao(botao)
-end
-
--- 1. Altura temporária
-alturaBtn.MouseButton1Click:Connect(function()
-	hrpsaved = hrp.Position
-	hrpsaved = Vector3.new(hrp.Position.X, 196.2, hrp.Position.Z)
-	hrpsavedY = hrp.Position.Y
-
-	hrpsaved = Vector3.new(hrp.Position.X, 196.2, hrp.Position.Z)
-	char:SetPrimaryPartCFrame(CFrame.new(hrpsaved))
-
-	task.delay(15, function()
-		char:SetPrimaryPartCFrame(CFrame.new(hrp.Position.X, hrpsavedY, hrp.Position.Z))
-	end)
-end)
-
--- 2. Aumentar velocidade
-velocidadeBtn.MouseButton1Click:Connect(function()
+-- Velocidade
+speedButton.MouseButton1Click:Connect(function()
 	humanoid.WalkSpeed = 60
 end)
 
--- 3. Pulo alto (como mola)
-puloBtn.MouseButton1Click:Connect(function()
+-- Pulo alto
+jumpButton.MouseButton1Click:Connect(function()
+	humanoid.UseJumpPower = true
+	humanoid.JumpPower = 120
 	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-	hrpsaved = hrp.Position
-	local puloForca = Instance.new("BodyVelocity")
-	puloForca.Velocity = Vector3.new(0, 100, 0)
-	puloForca.MaxForce = Vector3.new(0, 100000, 0)
-	puloForca.Parent = hrp
-	game:GetService("Debris"):AddItem(puloForca, 0.4)
 end)
 
--- 4. ESP (mostrar todos os jogadores)
-espBtn.MouseButton1Click:Connect(function()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
-			if not p.Character.Head:FindFirstChild("EspBill") then
-				local esp = Instance.new("BillboardGui")
-				esp.Name = "EspBill"
-				esp.Size = UDim2.new(0, 100, 0, 20)
-				esp.Adornee = p.Character.Head
-				esp.AlwaysOnTop = true
-				esp.Parent = p.Character.Head
-
-				local label = Instance.new("TextLabel")
-				label.Size = UDim2.new(1, 0, 1, 0)
-				label.BackgroundTransparency = 1
-				label.TextColor3 = Color3.fromRGB(255, 100, 255) -- Rosa roxo
-				label.Text = p.Name
-				label.Font = Enum.Font.FredokaOne
-				label.TextScaled = true
-				label.Parent = esp
+-- ESP
+espButton.MouseButton1Click:Connect(function()
+	espOn = not espOn
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = plr.Character.HumanoidRootPart
+			if espOn then
+				local box = Instance.new("BoxHandleAdornment")
+				box.Name = "ESPBox"
+				box.Adornee = hrp
+				box.Size = Vector3.new(3,6,3)
+				box.AlwaysOnTop = true
+				box.ZIndex = 10
+				box.Color3 = Color3.fromRGB(255, 0, 255)
+				box.Transparency = 0.5
+				box.Parent = hrp
+			else
+				if hrp:FindFirstChild("ESPBox") then
+					hrp.ESPBox:Destroy()
+				end
 			end
 		end
 	end
 end)
 
--- 5. Teleporte com marca
-teleportBtn.MouseButton1Click:Connect(function()
-	if not teleportPoint then
-		teleportPoint = hrp.Position
-		teleportBtn.Text = "Marcar ponto"
-	else
-		char:SetPrimaryPartCFrame(CFrame.new(teleportPoint))
-		teleportPoint = nil
-		teleportBtn.Text = "Teleporte"
+-- Teleporte
+teleportButton.MouseButton1Click:Connect(function()
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if root then
+		if teleportPos == nil then
+			teleportPos = root.Position
+			teleportButton.Text = "Teleportar (clique novamente)"
+		else
+			root.CFrame = CFrame.new(teleportPos)
+			teleportButton.Text = "Teleportar"
+			teleportPos = nil
+		end
 	end
+end)
+
+-- Mostrar/ocultar menu
+local menuVisible = false
+ball.MouseButton1Click:Connect(function()
+	menuVisible = not menuVisible
+	menu.Visible = menuVisible
 end)
