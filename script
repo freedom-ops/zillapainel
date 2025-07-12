@@ -1,0 +1,138 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- Clonar bola interativa para o mundo
+local bola = ReplicatedStorage:WaitForChild("BolaInterativa"):Clone()
+bola.Parent = workspace
+bola.Anchored = false
+bola.CanCollide = true
+bola.Position = hrp.Position + Vector3.new(0, 5, 0)
+
+-- Clonar o menu GUI
+local menuGui = ReplicatedStorage:WaitForChild("MenuGui"):Clone()
+menuGui.Enabled = false
+menuGui.Name = "ZillaMenu"
+menuGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Estilizar interface
+local function estilizarBotao(botao)
+	botao.Font = Enum.Font.FredokaOne
+	botao.TextColor3 = Color3.new(1, 1, 1)
+	botao.BackgroundColor3 = Color3.fromRGB(128, 0, 255) -- Roxo
+	botao.BorderSizePixel = 0
+	botao.TextStrokeTransparency = 0.5
+	botao.TextScaled = true
+	botao.TextWrapped = true
+end
+
+-- Estilizar fundo
+if menuGui:FindFirstChild("Frame") then
+	local frame = menuGui:FindFirstChild("Frame")
+	frame.BackgroundColor3 = Color3.fromRGB(40, 0, 80) -- Roxo escuro
+	frame.BorderSizePixel = 0
+	local titulo = Instance.new("TextLabel")
+	titulo.Size = UDim2.new(1, 0, 0, 40)
+	titulo.Position = UDim2.new(0, 0, 0, 0)
+	titulo.BackgroundTransparency = 1
+	titulo.Text = "ZILLA MENU"
+	titulo.Font = Enum.Font.FredokaOne
+	titulo.TextColor3 = Color3.fromRGB(200, 100, 255) -- Roxo vibrante
+	titulo.TextScaled = true
+	titulo.Parent = frame
+end
+
+-- Config para teleporte
+local teleportPoint = nil
+
+-- Criar detector de clique na bola
+local clickDetector = Instance.new("ClickDetector", bola)
+clickDetector.MaxActivationDistance = 20
+
+clickDetector.MouseClick:Connect(function()
+	menuGui.Enabled = not menuGui.Enabled
+end)
+
+-- Botões do menu (nomeie os botoes corretamente no MenuGui)
+local alturaBtn = menuGui:WaitForChild("AlturaBtn")
+local velocidadeBtn = menuGui:WaitForChild("VelocidadeBtn")
+local puloBtn = menuGui:WaitForChild("PuloBtn")
+local espBtn = menuGui:WaitForChild("EspBtn")
+local teleportBtn = menuGui:WaitForChild("TeleportBtn")
+
+-- Estilizar os botões
+for _, botao in pairs({alturaBtn, velocidadeBtn, puloBtn, espBtn, teleportBtn}) do
+	estilizarBotao(botao)
+end
+
+-- 1. Altura temporária
+alturaBtn.MouseButton1Click:Connect(function()
+	hrpsaved = hrp.Position
+	hrpsaved = Vector3.new(hrp.Position.X, 196.2, hrp.Position.Z)
+	hrpsavedY = hrp.Position.Y
+
+	hrpsaved = Vector3.new(hrp.Position.X, 196.2, hrp.Position.Z)
+	char:SetPrimaryPartCFrame(CFrame.new(hrpsaved))
+
+	task.delay(15, function()
+		char:SetPrimaryPartCFrame(CFrame.new(hrp.Position.X, hrpsavedY, hrp.Position.Z))
+	end)
+end)
+
+-- 2. Aumentar velocidade
+velocidadeBtn.MouseButton1Click:Connect(function()
+	humanoid.WalkSpeed = 60
+end)
+
+-- 3. Pulo alto (como mola)
+puloBtn.MouseButton1Click:Connect(function()
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	hrpsaved = hrp.Position
+	local puloForca = Instance.new("BodyVelocity")
+	puloForca.Velocity = Vector3.new(0, 100, 0)
+	puloForca.MaxForce = Vector3.new(0, 100000, 0)
+	puloForca.Parent = hrp
+	game:GetService("Debris"):AddItem(puloForca, 0.4)
+end)
+
+-- 4. ESP (mostrar todos os jogadores)
+espBtn.MouseButton1Click:Connect(function()
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+			if not p.Character.Head:FindFirstChild("EspBill") then
+				local esp = Instance.new("BillboardGui")
+				esp.Name = "EspBill"
+				esp.Size = UDim2.new(0, 100, 0, 20)
+				esp.Adornee = p.Character.Head
+				esp.AlwaysOnTop = true
+				esp.Parent = p.Character.Head
+
+				local label = Instance.new("TextLabel")
+				label.Size = UDim2.new(1, 0, 1, 0)
+				label.BackgroundTransparency = 1
+				label.TextColor3 = Color3.fromRGB(255, 100, 255) -- Rosa roxo
+				label.Text = p.Name
+				label.Font = Enum.Font.FredokaOne
+				label.TextScaled = true
+				label.Parent = esp
+			end
+		end
+	end
+end)
+
+-- 5. Teleporte com marca
+teleportBtn.MouseButton1Click:Connect(function()
+	if not teleportPoint then
+		teleportPoint = hrp.Position
+		teleportBtn.Text = "Marcar ponto"
+	else
+		char:SetPrimaryPartCFrame(CFrame.new(teleportPoint))
+		teleportPoint = nil
+		teleportBtn.Text = "Teleporte"
+	end
+end)
