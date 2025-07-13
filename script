@@ -1,65 +1,93 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
-local camera = workspace.CurrentCamera
 
--- GUIs
+-- GUI Setup
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MenuBallGui"
+screenGui.Name = "ZillaCheatsGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Ball (round floating button)
+-- Floating ball
 local ball = Instance.new("ImageButton")
-ball.Name = "MagicBall"
+ball.Name = "GhostBall"
 ball.Size = UDim2.new(0, 70, 0, 70)
-ball.Position = UDim2.new(0.1, 0, 0.1, 0)
+ball.Position = UDim2.new(0.05, 0, 0.05, 0)
 ball.BackgroundTransparency = 1
-ball.Image = "rbxassetid://3570695787" -- circular base
+ball.Image = "rbxassetid://3570695787"
 ball.ImageColor3 = Color3.fromRGB(170, 0, 255)
 ball.ScaleType = Enum.ScaleType.Stretch
 ball.AutoButtonColor = false
-ball.Parent = screenGui
 ball.Draggable = true
+ball.Parent = screenGui
 
--- Emoji inside ball
+-- 👻 Emoji
 local emoji = Instance.new("TextLabel")
 emoji.Size = UDim2.new(1, 0, 1, 0)
 emoji.BackgroundTransparency = 1
-emoji.Text = "👾"
+emoji.Text = "👻"
 emoji.TextScaled = true
 emoji.Font = Enum.Font.FredokaOne
 emoji.TextColor3 = Color3.new(1, 1, 1)
 emoji.Parent = ball
 
--- Menu container
+-- Menu Frame
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 300, 0, 400)
+menu.Size = UDim2.new(0, 300, 0, 300)
 menu.Position = UDim2.new(0, 100, 0, 100)
 menu.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
 menu.Visible = false
+menu.BorderSizePixel = 0
 menu.Active = true
 menu.Draggable = true
-menu.BorderSizePixel = 0
 menu.Parent = screenGui
 
--- Button creation function
-local function createButton(text, icon)
+-- UIListLayout + Scrolling
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, 0, 1, -40)
+scroll.Position = UDim2.new(0, 0, 0, 40)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 5
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scroll.Parent = menu
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 5)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "🟣 ZillaCheats"
+title.TextScaled = true
+title.Font = Enum.Font.FredokaOne
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = menu
+
+-- Botão redondo
+local function createButton(text, emoji)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 40)
 	btn.Position = UDim2.new(0, 10, 0, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(100, 0, 180)
-	btn.Text = icon .. "  " .. text
+	btn.Text = emoji .. "  " .. text
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.Font = Enum.Font.FredokaOne
 	btn.TextScaled = true
 	btn.AutoButtonColor = false
+	btn.BorderSizePixel = 0
 	btn.ClipsDescendants = true
+	btn.Parent = scroll
+
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 16)
 
 	local defaultColor = btn.BackgroundColor3
 	local hoverColor = Color3.fromRGB(150, 0, 220)
@@ -72,23 +100,21 @@ local function createButton(text, icon)
 		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = defaultColor}):Play()
 	end)
 
-	btn.Parent = menu
 	return btn
 end
 
--- Save preferences
+-- Save preference helper
 local function saveAttr(name, value)
 	player:SetAttribute(name, value)
 end
 
 -- States
-local isUp = false
 local teleportPos = nil
-local espOn = player:GetAttribute("ESP") or false
 local godMode = player:GetAttribute("GodMode") or false
+local espOn = player:GetAttribute("ESP") or false
 local infiniteJump = player:GetAttribute("InfJump") or false
 
--- Buttons
+-- Functionality
 local upButton = createButton("Fly (15s)", "☁️")
 local speedButton = createButton("Speed 60", "⚡")
 local jumpButton = createButton("High Jump", "🦘")
@@ -97,21 +123,8 @@ local teleportButton = createButton("Teleport", "📍")
 local godButton = createButton("God Mode", "🛡️")
 local jumpInfButton = createButton("Infinite Jump", "🔁")
 
--- Position buttons
-local function layoutButtons()
-	local y = 0
-	for _, child in ipairs(menu:GetChildren()) do
-		if child:IsA("TextButton") then
-			child.Position = UDim2.new(0, 10, 0, y)
-			y += 45
-		end
-	end
-end
-layoutButtons()
-
--- Button Logic
-
--- Fly up
+-- Fly
+local isUp = false
 upButton.MouseButton1Click:Connect(function()
 	if isUp then return end
 	isUp = true
@@ -127,10 +140,10 @@ end)
 
 -- Speed
 speedButton.MouseButton1Click:Connect(function()
-	humanoid.WalkSpeed = 60
+	humanoid.WalkSpeed = 100
 end)
 
--- Jump Boost
+-- Jump boost
 jumpButton.MouseButton1Click:Connect(function()
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 120
@@ -141,6 +154,7 @@ end)
 espButton.MouseButton1Click:Connect(function()
 	espOn = not espOn
 	saveAttr("ESP", espOn)
+
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
 			local hrp = plr.Character.HumanoidRootPart
@@ -164,7 +178,7 @@ espButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Teleport System
+-- Teleport
 teleportButton.MouseButton1Click:Connect(function()
 	local root = character:FindFirstChild("HumanoidRootPart")
 	if not root then return end
@@ -178,11 +192,10 @@ teleportButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- God Mode
+-- God mode
 godButton.MouseButton1Click:Connect(function()
 	godMode = not godMode
 	saveAttr("GodMode", godMode)
-
 	if godMode then
 		humanoid:GetPropertyChangedSignal("Health"):Connect(function()
 			if godMode and humanoid.Health < humanoid.MaxHealth then
@@ -210,9 +223,10 @@ UserInputService.JumpRequest:Connect(function()
 	end
 end)
 
--- Toggle Menu
+-- Toggle menu
 local menuVisible = false
 ball.MouseButton1Click:Connect(function()
 	menuVisible = not menuVisible
 	menu.Visible = menuVisible
 end)
+
