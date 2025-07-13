@@ -65,7 +65,7 @@ layout.SortOrder = Enum.SortOrder.LayoutOrder
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "🟣 ZillaCheats"
+title.Text = "ZillaCheats"
 title.TextScaled = true
 title.Font = Enum.Font.FredokaOne
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -140,7 +140,7 @@ end)
 
 -- Speed
 speedButton.MouseButton1Click:Connect(function()
-	humanoid.WalkSpeed = 100
+	humanoid.WalkSpeed = 200
 end)
 
 -- Jump boost
