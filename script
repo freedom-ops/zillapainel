@@ -1,6 +1,8 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
@@ -14,10 +16,11 @@ screenGui.ResetOnSpawn = false
 -- Bola (botão redondo)
 local ball = Instance.new("ImageButton")
 ball.Name = "MagicBall"
-ball.Size = UDim2.new(0, 80, 0, 80)
+ball.Size = UDim2.new(0, 70, 0, 70)
 ball.Position = UDim2.new(0.1, 0, 0.1, 0)
 ball.BackgroundTransparency = 1
 ball.Image = "rbxassetid://3570695787"
+ball.Text = "👻"
 ball.ImageColor3 = Color3.fromRGB(170, 0, 255)
 ball.ScaleType = Enum.ScaleType.Stretch
 ball.Parent = screenGui
@@ -26,7 +29,7 @@ ball.Draggable = true
 
 -- Menu
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 200, 0, 250)
+menu.Size = UDim2.new(0, 300, 0, 320)
 menu.Position = UDim2.new(0, 100, 0, 100)
 menu.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
 menu.Visible = false
@@ -34,14 +37,14 @@ menu.Active = true
 menu.Draggable = true
 menu.Parent = screenGui
 
--- Fonte
+-- Função para criar botões
 local function createButton(text)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -10, 0, 35)
 	btn.Position = UDim2.new(0, 5, 0, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(100, 0, 180)
 	btn.Text = text
-	btn.TextColor3 = Color3.new(1,1,1)
+	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.Font = Enum.Font.FredokaOne
 	btn.TextScaled = true
 	btn.AutoButtonColor = true
@@ -49,23 +52,29 @@ local function createButton(text)
 	return btn
 end
 
--- Funções
+-- Estados
 local isUp = false
 local teleportPos = nil
 local espOn = false
+local godMode = false
+local infiniteJump = false
 
 -- Botões
-local upButton = createButton("Subir 196.2 (15s)")
-local speedButton = createButton("Velocidade 60")
+local upButton = createButton("Subir no céu (15s)")
+local speedButton = createButton("Velocidade")
 local jumpButton = createButton("Pulo Alto")
 local espButton = createButton("ESP")
 local teleportButton = createButton("Teleportar")
+local godButton = createButton("Modo Invencível")
+local infiniteJumpButton = createButton("Pulos Ilimitados")
 
--- Reposicionar botões
+-- Posiciona os botões
 local function updateButtonPositions()
-	for i, btn in ipairs(menu:GetChildren()) do
+	local y = 0
+	for _, btn in ipairs(menu:GetChildren()) do
 		if btn:IsA("TextButton") then
-			btn.Position = UDim2.new(0, 5, 0, (i - 1) * 40)
+			btn.Position = UDim2.new(0, 5, 0, y)
+			y += 40
 		end
 	end
 end
@@ -77,7 +86,6 @@ upButton.MouseButton1Click:Connect(function()
 	isUp = true
 	local root = character:FindFirstChild("HumanoidRootPart")
 	if root then
-		local originalPos = root.Position
 		root.Anchored = true
 		root.CFrame = CFrame.new(root.Position.X, 196.2, root.Position.Z)
 		task.wait(15)
@@ -108,7 +116,7 @@ espButton.MouseButton1Click:Connect(function()
 				local box = Instance.new("BoxHandleAdornment")
 				box.Name = "ESPBox"
 				box.Adornee = hrp
-				box.Size = Vector3.new(3,6,3)
+				box.Size = Vector3.new(3, 6, 3)
 				box.AlwaysOnTop = true
 				box.ZIndex = 10
 				box.Color3 = Color3.fromRGB(255, 0, 255)
@@ -129,12 +137,49 @@ teleportButton.MouseButton1Click:Connect(function()
 	if root then
 		if teleportPos == nil then
 			teleportPos = root.Position
-			teleportButton.Text = "Teleportar (clique novamente)"
+			teleportButton.Text = "Clique novamente para teleportar"
 		else
 			root.CFrame = CFrame.new(teleportPos)
 			teleportButton.Text = "Teleportar"
 			teleportPos = nil
 		end
+	end
+end)
+
+-- Modo Invencível
+godButton.MouseButton1Click:Connect(function()
+	godMode = not godMode
+	godButton.Text = godMode and "Invencível: ON" or "Modo Invencível"
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		if godMode then
+			humanoid.Health = humanoid.MaxHealth
+			humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+				if godMode and humanoid.Health < humanoid.MaxHealth then
+					humanoid.Health = humanoid.MaxHealth
+				end
+			end)
+		end
+	end
+end)
+
+-- Bloquear ragdoll
+character.DescendantAdded:Connect(function(obj)
+	if godMode and (obj:IsA("BallSocketConstraint") or obj.Name:lower():find("ragdoll")) then
+		obj:Destroy()
+	end
+end)
+
+-- Pulo infinito
+infiniteJumpButton.MouseButton1Click:Connect(function()
+	infiniteJump = not infiniteJump
+	infiniteJumpButton.Text = infiniteJump and "Pulo Infinito: ON" or "Pulos Ilimitados"
+end)
+
+UserInputService.JumpRequest:Connect(function()
+	if infiniteJump then
+		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
 
