@@ -16,7 +16,7 @@ screenGui.Name = "ZillaCheatsGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- GUI DE KEY (caso ainda não tenha)
+-- GUI DE KEY
 if not hasAccess then
 	local keyFrame = Instance.new("Frame")
 	keyFrame.Size = UDim2.new(0, 300, 0, 150)
@@ -57,8 +57,7 @@ if not hasAccess then
 	confirm.BorderSizePixel = 0
 	confirm.Parent = keyFrame
 
-	local corner1 = Instance.new("UICorner", keyFrame)
-	corner1.CornerRadius = UDim.new(0, 10)
+	Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 10)
 	Instance.new("UICorner", input)
 	Instance.new("UICorner", confirm)
 
@@ -76,8 +75,13 @@ else
 	showCheatMenu()
 end
 
--- FUNÇÃO PRINCIPAL DO MENU
 function showCheatMenu()
+	-- Atualiza quando o player morrer e renascer
+	player.CharacterAdded:Connect(function(newChar)
+		character = newChar
+		humanoid = character:WaitForChild("Humanoid")
+	end)
+
 	-- Floating ball
 	local ball = Instance.new("ImageButton")
 	ball.Name = "GhostBall"
@@ -91,7 +95,6 @@ function showCheatMenu()
 	ball.Draggable = true
 	ball.Parent = screenGui
 
-	-- 👻 Emoji
 	local emoji = Instance.new("TextLabel")
 	emoji.Size = UDim2.new(1, 0, 1, 0)
 	emoji.BackgroundTransparency = 1
@@ -101,7 +104,7 @@ function showCheatMenu()
 	emoji.TextColor3 = Color3.new(1, 1, 1)
 	emoji.Parent = ball
 
-	-- Menu Frame
+	-- Menu
 	local menu = Instance.new("Frame")
 	menu.Size = UDim2.new(0, 300, 0, 300)
 	menu.Position = UDim2.new(0, 100, 0, 100)
@@ -112,7 +115,6 @@ function showCheatMenu()
 	menu.Draggable = true
 	menu.Parent = screenGui
 
-	-- UIListLayout + Scrolling
 	local scroll = Instance.new("ScrollingFrame")
 	scroll.Size = UDim2.new(1, 0, 1, -40)
 	scroll.Position = UDim2.new(0, 0, 0, 40)
@@ -127,7 +129,6 @@ function showCheatMenu()
 	layout.Padding = UDim.new(0, 5)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-	-- Título
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, 0, 0, 40)
 	title.BackgroundTransparency = 1
@@ -137,7 +138,6 @@ function showCheatMenu()
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
 	title.Parent = menu
 
-	-- Botão redondo
 	local function createButton(text, emoji)
 		local btn = Instance.new("TextButton")
 		btn.Size = UDim2.new(1, -20, 0, 40)
@@ -161,7 +161,6 @@ function showCheatMenu()
 		btn.MouseEnter:Connect(function()
 			TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
 		end)
-
 		btn.MouseLeave:Connect(function()
 			TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = defaultColor}):Play()
 		end)
@@ -172,6 +171,7 @@ function showCheatMenu()
 	-- Estados
 	local teleportPos = nil
 	local espOn = false
+	local speedOn = false
 
 	-- Botões
 	local upButton = createButton("Fly (15s)", "☁️")
@@ -241,19 +241,3 @@ function showCheatMenu()
 			teleportPos = nil
 		end
 	end)
-
-	-- Speed toggle
-	local speedOn = false
-	speedButton.MouseButton1Click:Connect(function()
-		speedOn = not speedOn
-		humanoid.WalkSpeed = speedOn and 40 or 16
-		speedButton.Text = speedOn and "⚡ Speed ON" or "⚡ Speed 40"
-	end)
-
-	-- Toggle menu
-	local menuVisible = false
-	ball.MouseButton1Click:Connect(function()
-		menuVisible = not menuVisible
-		menu.Visible = menuVisible
-	end)
-end
