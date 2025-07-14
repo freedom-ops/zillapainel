@@ -6,82 +6,20 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
--- CONFIGURAÇÃO DA KEY
-local requiredKey = "zillabetas"
-local hasAccess = player:GetAttribute("ZillaKeyAccess") == true
+-- Função que atualiza character/humanoid ao renascer
+player.CharacterAdded:Connect(function(char)
+	character = char
+	humanoid = character:WaitForChild("Humanoid")
+end)
 
--- GUI GERAL
+-- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ZillaCheatsGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- GUI DE KEY
-if not hasAccess then
-	local keyFrame = Instance.new("Frame")
-	keyFrame.Size = UDim2.new(0, 300, 0, 150)
-	keyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-	keyFrame.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
-	keyFrame.BorderSizePixel = 0
-	keyFrame.Parent = screenGui
-
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, 0, 0, 40)
-	title.Position = UDim2.new(0, 0, 0, 0)
-	title.BackgroundTransparency = 1
-	title.Text = "Enter Access Key"
-	title.Font = Enum.Font.FredokaOne
-	title.TextScaled = true
-	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.Parent = keyFrame
-
-	local input = Instance.new("TextBox")
-	input.Size = UDim2.new(0.8, 0, 0, 40)
-	input.Position = UDim2.new(0.1, 0, 0.4, 0)
-	input.PlaceholderText = "Type the key here..."
-	input.Font = Enum.Font.FredokaOne
-	input.TextScaled = true
-	input.TextColor3 = Color3.new(1, 1, 1)
-	input.BackgroundColor3 = Color3.fromRGB(100, 0, 180)
-	input.BorderSizePixel = 0
-	input.Parent = keyFrame
-
-	local confirm = Instance.new("TextButton")
-	confirm.Size = UDim2.new(0.5, 0, 0, 40)
-	confirm.Position = UDim2.new(0.25, 0, 0.75, 0)
-	confirm.Text = "Unlock"
-	confirm.Font = Enum.Font.FredokaOne
-	confirm.TextScaled = true
-	confirm.TextColor3 = Color3.new(1, 1, 1)
-	confirm.BackgroundColor3 = Color3.fromRGB(150, 0, 220)
-	confirm.BorderSizePixel = 0
-	confirm.Parent = keyFrame
-
-	Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 10)
-	Instance.new("UICorner", input)
-	Instance.new("UICorner", confirm)
-
-	confirm.MouseButton1Click:Connect(function()
-		if input.Text:lower() == requiredKey:lower() then
-			player:SetAttribute("ZillaKeyAccess", true)
-			keyFrame:Destroy()
-			showCheatMenu()
-		else
-			input.Text = ""
-			input.PlaceholderText = "❌ Wrong key"
-		end
-	end)
-else
-	showCheatMenu()
-end
-
+-- Função que mostra o menu principal
 function showCheatMenu()
-	-- Atualiza quando o player morrer e renascer
-	player.CharacterAdded:Connect(function(newChar)
-		character = newChar
-		humanoid = character:WaitForChild("Humanoid")
-	end)
-
 	-- Floating ball
 	local ball = Instance.new("ImageButton")
 	ball.Name = "GhostBall"
@@ -104,7 +42,6 @@ function showCheatMenu()
 	emoji.TextColor3 = Color3.new(1, 1, 1)
 	emoji.Parent = ball
 
-	-- Menu
 	local menu = Instance.new("Frame")
 	menu.Size = UDim2.new(0, 300, 0, 300)
 	menu.Position = UDim2.new(0, 100, 0, 100)
@@ -152,8 +89,7 @@ function showCheatMenu()
 		btn.ClipsDescendants = true
 		btn.Parent = scroll
 
-		local corner = Instance.new("UICorner", btn)
-		corner.CornerRadius = UDim.new(0, 16)
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 16)
 
 		local defaultColor = btn.BackgroundColor3
 		local hoverColor = Color3.fromRGB(150, 0, 220)
@@ -197,9 +133,11 @@ function showCheatMenu()
 
 	-- High Jump
 	jumpButton.MouseButton1Click:Connect(function()
-		humanoid.UseJumpPower = true
-		humanoid.JumpPower = 120
-		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		if humanoid then
+			humanoid.UseJumpPower = true
+			humanoid.JumpPower = 120
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
 	end)
 
 	-- ESP
@@ -241,3 +179,81 @@ function showCheatMenu()
 			teleportPos = nil
 		end
 	end)
+
+	-- Speed
+	speedButton.MouseButton1Click:Connect(function()
+		speedOn = not speedOn
+		if humanoid then
+			humanoid.WalkSpeed = speedOn and 40 or 16
+		end
+		speedButton.Text = speedOn and "⚡ Speed ON" or "⚡ Speed 40"
+	end)
+
+	-- Toggle menu
+	local menuVisible = false
+	ball.MouseButton1Click:Connect(function()
+		menuVisible = not menuVisible
+		menu.Visible = menuVisible
+	end)
+end
+
+-- SISTEMA DE KEY
+local requiredKey = "zillabetas"
+local hasAccess = player:GetAttribute("ZillaKeyAccess") == true
+
+if not hasAccess then
+	local keyFrame = Instance.new("Frame")
+	keyFrame.Size = UDim2.new(0, 300, 0, 150)
+	keyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+	keyFrame.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
+	keyFrame.BorderSizePixel = 0
+	keyFrame.Parent = screenGui
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 40)
+	title.Text = "Enter Access Key"
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.FredokaOne
+	title.TextScaled = true
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.Parent = keyFrame
+
+	local input = Instance.new("TextBox")
+	input.Size = UDim2.new(0.8, 0, 0, 40)
+	input.Position = UDim2.new(0.1, 0, 0.4, 0)
+	input.PlaceholderText = "Type the key here..."
+	input.Font = Enum.Font.FredokaOne
+	input.TextScaled = true
+	input.TextColor3 = Color3.new(1, 1, 1)
+	input.BackgroundColor3 = Color3.fromRGB(100, 0, 180)
+	input.BorderSizePixel = 0
+	input.Parent = keyFrame
+
+	local confirm = Instance.new("TextButton")
+	confirm.Size = UDim2.new(0.5, 0, 0, 40)
+	confirm.Position = UDim2.new(0.25, 0, 0.75, 0)
+	confirm.Text = "Unlock"
+	confirm.Font = Enum.Font.FredokaOne
+	confirm.TextScaled = true
+	confirm.TextColor3 = Color3.new(1, 1, 1)
+	confirm.BackgroundColor3 = Color3.fromRGB(150, 0, 220)
+	confirm.BorderSizePixel = 0
+	confirm.Parent = keyFrame
+
+	Instance.new("UICorner", keyFrame)
+	Instance.new("UICorner", input)
+	Instance.new("UICorner", confirm)
+
+	confirm.MouseButton1Click:Connect(function()
+		if input.Text:lower() == requiredKey:lower() then
+			player:SetAttribute("ZillaKeyAccess", true)
+			keyFrame:Destroy()
+			showCheatMenu()
+		else
+			input.Text = ""
+			input.PlaceholderText = "❌ Wrong key"
+		end
+	end)
+else
+	showCheatMenu()
+end
