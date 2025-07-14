@@ -110,20 +110,24 @@ end
 
 -- States
 local teleportPos = nil
-local godMode = player:GetAttribute("GodMode") or false
 local espOn = player:GetAttribute("ESP") or false
-local infiniteJump = player:GetAttribute("InfJump") or false
 
--- Functionality
+-- Botões
 local upButton = createButton("Fly (15s)", "☁️")
-local speedButton = createButton("Speed 60", "⚡")
 local jumpButton = createButton("High Jump", "🦘")
 local espButton = createButton("ESP", "👁️")
 local teleportButton = createButton("Teleport", "📍")
-local godButton = createButton("God Mode", "🛡️")
-local jumpInfButton = createButton("Infinite Jump", "🔁")
 
--- Fly
+-- Velocidade (Speed Toggle)
+local speedOn = false
+local speedButton = createButton("Speed 40", "⚡")
+speedButton.MouseButton1Click:Connect(function()
+	speedOn = not speedOn
+	humanoid.WalkSpeed = speedOn and 40 or 16
+	speedButton.Text = speedOn and "⚡ Speed ON" or "⚡ Speed 40"
+end)
+
+-- Fly (15s)
 local isUp = false
 upButton.MouseButton1Click:Connect(function()
 	if isUp then return end
@@ -138,12 +142,7 @@ upButton.MouseButton1Click:Connect(function()
 	isUp = false
 end)
 
--- Speed
-speedButton.MouseButton1Click:Connect(function()
-	humanoid.WalkSpeed = 200
-end)
-
--- Jump boost
+-- High Jump
 jumpButton.MouseButton1Click:Connect(function()
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 120
@@ -192,41 +191,9 @@ teleportButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- God mode
-godButton.MouseButton1Click:Connect(function()
-	godMode = not godMode
-	saveAttr("GodMode", godMode)
-	if godMode then
-		humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-			if godMode and humanoid.Health < humanoid.MaxHealth then
-				humanoid.Health = humanoid.MaxHealth
-			end
-		end)
-	end
-end)
-
-character.DescendantAdded:Connect(function(obj)
-	if godMode and (obj:IsA("BallSocketConstraint") or obj.Name:lower():find("ragdoll")) then
-		obj:Destroy()
-	end
-end)
-
--- Infinite Jump
-jumpInfButton.MouseButton1Click:Connect(function()
-	infiniteJump = not infiniteJump
-	saveAttr("InfJump", infiniteJump)
-end)
-
-UserInputService.JumpRequest:Connect(function()
-	if infiniteJump then
-		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-	end
-end)
-
 -- Toggle menu
 local menuVisible = false
 ball.MouseButton1Click:Connect(function()
 	menuVisible = not menuVisible
 	menu.Visible = menuVisible
 end)
-
